@@ -9,27 +9,39 @@ import com.tuwaiq.photogallery.flickr.models.GalleryItem
 import com.tuwaiq.photogallery.flickr.repo.FlickrFetcherRepo
 
 
-class PhotoGalleryViewModel() : ViewModel() {
+class PhotoGalleryViewModel(private val app:Application) : AndroidViewModel(app) {
 
 
     private val flickrFetcherRepo = FlickrFetcherRepo()
 
     private val liveDataSearchTerm:MutableLiveData<String> = MutableLiveData()
 
-    val responseLiveData:LiveData<List<GalleryItem>>
+    var responseLiveData:LiveData<List<GalleryItem>>
 
+     val searchTerm: String
+                get() = QueryPreferences.getStoredQuery(app)
 
     init {
 
-        responseLiveData =
-            Transformations.switchMap(liveDataSearchTerm){ searchTerm->
-                flickrFetcherRepo.searchPhotos(searchTerm)
-            }
+        liveDataSearchTerm.value = searchTerm
+
+       responseLiveData =
+           Transformations.switchMap(liveDataSearchTerm) { searchTerm ->
+
+                if (searchTerm.isBlank()){
+                    flickrFetcherRepo.fetchPhotos()
+                } else{
+                    flickrFetcherRepo.searchPhotos(searchTerm)
+                }
+
+
+           }
 
 
     }
 
     fun sendQueryFetchPhotos(query: String){
+        QueryPreferences.setStoredQuery(app,query)
         liveDataSearchTerm.value = query
 
     }

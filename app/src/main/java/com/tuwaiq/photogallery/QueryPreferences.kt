@@ -1,25 +1,25 @@
 package com.tuwaiq.photogallery
 
 import android.content.Context
-import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import retrofit2.http.Query
 
-
-private const val PREF_SEARCH_QUERY = "searchQuery"
+private const val PREF_SEARCH_QUERY_KEY = "searchQuery"
 object QueryPreferences {
 
-    fun getStoredQuery(context: Context): String {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-        return prefs.getString(PREF_SEARCH_QUERY, "")!!
+    fun getStoredQuery(context: Context):String{
+
+        val pref = PreferenceManager.getDefaultSharedPreferences(context)
+
+      return  pref.getString(PREF_SEARCH_QUERY_KEY,"")!!
     }
 
-    fun setStoredQuery(context: Context, query: String) {
+    fun setStoredQuery(context: Context,query: String){
         PreferenceManager.getDefaultSharedPreferences(context)
-            .edit(){
-                putString(PREF_SEARCH_QUERY, query)
-
-            }
-
+            .edit()
+            .putString(PREF_SEARCH_QUERY_KEY,query)
+            .apply()
     }
+
 
 }

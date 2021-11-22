@@ -44,8 +44,24 @@ class PhotoGalleryFragment : Fragment() {
                     return false
                 }
             })
+
+            setOnSearchClickListener {
+                searchView.setQuery(viewModel.searchTerm,false)
+            }
         }
 
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+
+        return when(item.itemId){
+            R.id.clear_search -> {
+                viewModel.sendQueryFetchPhotos("")
+                true
+            }else -> super.onOptionsItemSelected(item)
+
+
+        }
     }
 
 

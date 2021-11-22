@@ -8,6 +8,7 @@ import com.tuwaiq.photogallery.flickr.api.PhotoInterceptor
 import com.tuwaiq.photogallery.flickr.models.FlickrResponse
 import com.tuwaiq.photogallery.flickr.models.GalleryItem
 import com.tuwaiq.photogallery.flickr.models.PhotoResponse
+import com.tuwaiq.photogallery.photoGallleryFragment.PhotoGalleryViewModel
 import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Callback
@@ -41,10 +42,11 @@ class FlickrFetcherRepo {
         return fetchPhotosMetadata(flickrApi.searchPhotos(query))
     }
 
+
+
     private fun fetchPhotosMetadata(photoRequest:Call<FlickrResponse>):LiveData<List<GalleryItem>>{
 
         val responseLiveData:MutableLiveData<List<GalleryItem>> = MutableLiveData()
-
 
       //  val photoRequest:  = flickrApi.fetchPhotos()
 
