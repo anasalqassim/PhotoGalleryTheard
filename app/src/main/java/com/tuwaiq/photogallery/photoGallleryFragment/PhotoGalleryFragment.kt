@@ -10,11 +10,17 @@ import android.widget.ProgressBar
 import android.widget.SearchView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.*
 import coil.load
+import com.tuwaiq.photogallery.QueryPreferences
 import com.tuwaiq.photogallery.R
 import com.tuwaiq.photogallery.flickr.models.GalleryItem
+import com.tuwaiq.photogallery.workers.PollWorker
+import com.tuwaiq.photogallery.workers.TestWorker
+import java.util.concurrent.TimeUnit
 
 private const val TAG = "PhotoGalleryFragment"
+private const val POLL_WORK = "POLL_WORK"
 class PhotoGalleryFragment : Fragment() {
 
     private lateinit var photoGalleryRV:RecyclerView
@@ -27,10 +33,22 @@ class PhotoGalleryFragment : Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.photo_gallery_fragment,menu)
 
+        val toggleItem = menu.findItem(R.id.menu_item_toggle_polling)
+        val isPolling = QueryPreferences.isPolling(requireContext())
+        val toggleItemTitle = if (isPolling) {
+            R.string.stop_polling
+        } else {
+            R.string.start_polling
+        }
+        toggleItem.setTitle(toggleItemTitle)
+
+
+
         val searchItem =menu.findItem(R.id.app_bar_search)
         val searchView  = searchItem.actionView as SearchView
 
         searchView.apply {
+
             setOnQueryTextListener(object : SearchView.OnQueryTextListener{
                 override fun onQueryTextSubmit(query: String?): Boolean {
                     if (query != null) {
@@ -58,7 +76,42 @@ class PhotoGalleryFragment : Fragment() {
             R.id.clear_search -> {
                 viewModel.sendQueryFetchPhotos("")
                 true
-            }else -> super.onOptionsItemSelected(item)
+            }
+
+            R.id.menu_item_toggle_polling->{
+                val isPolling = QueryPreferences.isPolling(requireContext())
+
+                if (isPolling){
+                    WorkManager.getInstance(requireContext()).cancelUniqueWork(POLL_WORK)
+                    QueryPreferences.setPolling(requireContext(), false)
+                }else{
+                    val constraint =  Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.UNMETERED)
+                        .build()
+
+                    val workRequest = PeriodicWorkRequest
+                        .Builder(PollWorker::class.java, 15, TimeUnit.MINUTES)
+                        .setConstraints(constraint)
+                        .build()
+
+
+                        WorkManager.getInstance(requireContext())
+                            .enqueueUniquePeriodicWork(POLL_WORK,
+                            ExistingPeriodicWorkPolicy.KEEP,
+                            workRequest)
+
+
+
+                    QueryPreferences.setPolling(requireContext(),true)
+
+                }
+
+                activity?.invalidateOptionsMenu()
+                true
+            }
+
+
+            else -> super.onOptionsItemSelected(item)
 
 
         }
@@ -67,6 +120,24 @@ class PhotoGalleryFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+////
+//        val constraint = Constraints.Builder()
+//            .setRequiredNetworkType(NetworkType.UNMETERED)
+//            .build()
+//
+//        val workRequest = PeriodicWorkRequest
+//            .Builder(PollWorker::class.java,10,TimeUnit.SECONDS)
+//            .setConstraints(constraint)
+//            .build()
+//
+//        WorkManager.getInstance(requireContext())
+//            .enqueueUniquePeriodicWork(POLL_WORK,
+//                ExistingPeriodicWorkPolicy.KEEP,
+//                workRequest)
+//
+//
+
+
         setHasOptionsMenu(true)
         viewModel.responseLiveData.observe(
             this, {galleryItems->

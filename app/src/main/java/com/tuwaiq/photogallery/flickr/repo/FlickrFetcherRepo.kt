@@ -32,11 +32,14 @@ class FlickrFetcherRepo {
         .client(client)
         .build()
 
-   private val flickrApi = retrofit.create(FlickrApi::class.java)
+    private val flickrApi = retrofit.create(FlickrApi::class.java)
+
+    fun fetchPhotosRequest():Call<FlickrResponse> = flickrApi.fetchPhotos()
+
+    fun fetchPhotos():LiveData<List<GalleryItem>> = fetchPhotosMetadata(fetchPhotosRequest())
 
 
-    fun fetchPhotos():LiveData<List<GalleryItem>> = fetchPhotosMetadata(flickrApi.fetchPhotos())
-
+    fun searchPhotosRequest(query: String):Call<FlickrResponse> = flickrApi.searchPhotos(query)
 
     fun searchPhotos(query: String):LiveData<List<GalleryItem>> {
         return fetchPhotosMetadata(flickrApi.searchPhotos(query))
