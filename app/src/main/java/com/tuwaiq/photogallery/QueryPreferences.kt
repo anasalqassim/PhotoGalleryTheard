@@ -23,16 +23,16 @@ object QueryPreferences {
             .apply()
     }
 
-    fun getLastPhotoId(context: Context):String{
+    fun getLastResultId(context: Context):String{
       val pref =  PreferenceManager.getDefaultSharedPreferences(context)
 
         return pref.getString(PREF_LAST_RESULT_ID,"")!!
     }
 
-    fun setLastPhotoId(context: Context,lastPhotoId:String){
+    fun setLastResultId(context: Context,lastResultId:String){
         PreferenceManager.getDefaultSharedPreferences(context)
             .edit()
-            .putString(PREF_LAST_RESULT_ID,lastPhotoId)
+            .putString(PREF_LAST_RESULT_ID,lastResultId)
             .apply()
     }
 
