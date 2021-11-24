@@ -2,9 +2,7 @@ package com.tuwaiq.photogallery.photoGallleryFragment
 
 import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
-import android.util.Log
 import android.view.*
-import androidx.fragment.app.Fragment
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.SearchView
@@ -14,14 +12,13 @@ import androidx.work.*
 import coil.load
 import com.tuwaiq.photogallery.QueryPreferences
 import com.tuwaiq.photogallery.R
+import com.tuwaiq.photogallery.VisibleFragment
 import com.tuwaiq.photogallery.flickr.models.GalleryItem
-import com.tuwaiq.photogallery.workers.PollWorker
-import com.tuwaiq.photogallery.workers.TestWorker
-import java.util.concurrent.TimeUnit
+
 
 private const val TAG = "PhotoGalleryFragment"
 private const val POLL_WORK = "POLL_WORK"
-class PhotoGalleryFragment : Fragment() {
+class PhotoGalleryFragment : VisibleFragment() {
 
     private lateinit var photoGalleryRV:RecyclerView
     private lateinit var progressBar: ProgressBar
@@ -79,32 +76,8 @@ class PhotoGalleryFragment : Fragment() {
             }
 
             R.id.menu_item_toggle_polling->{
-                val isPolling = QueryPreferences.isPolling(requireContext())
-
-                if (isPolling){
-                    WorkManager.getInstance(requireContext()).cancelUniqueWork(POLL_WORK)
-                    QueryPreferences.setPolling(requireContext(), false)
-                }else{
-                    val constraint =  Constraints.Builder()
-                        .setRequiredNetworkType(NetworkType.UNMETERED)
-                        .build()
-
-                    val workRequest = PeriodicWorkRequest
-                        .Builder(PollWorker::class.java, 15, TimeUnit.MINUTES)
-                        .setConstraints(constraint)
-                        .build()
 
 
-                        WorkManager.getInstance(requireContext())
-                            .enqueueUniquePeriodicWork(POLL_WORK,
-                            ExistingPeriodicWorkPolicy.KEEP,
-                            workRequest)
-
-
-
-                    QueryPreferences.setPolling(requireContext(),true)
-
-                }
 
                 activity?.invalidateOptionsMenu()
                 true
@@ -118,25 +91,9 @@ class PhotoGalleryFragment : Fragment() {
     }
 
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-////
-//        val constraint = Constraints.Builder()
-//            .setRequiredNetworkType(NetworkType.UNMETERED)
-//            .build()
-//
-//        val workRequest = PeriodicWorkRequest
-//            .Builder(PollWorker::class.java,10,TimeUnit.SECONDS)
-//            .setConstraints(constraint)
-//            .build()
-//
-//        WorkManager.getInstance(requireContext())
-//            .enqueueUniquePeriodicWork(POLL_WORK,
-//                ExistingPeriodicWorkPolicy.KEEP,
-//                workRequest)
-//
-//
-
 
         setHasOptionsMenu(true)
         viewModel.responseLiveData.observe(
