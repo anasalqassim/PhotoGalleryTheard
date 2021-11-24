@@ -6,19 +6,21 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.SearchView
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.work.*
 import coil.load
 import com.tuwaiq.photogallery.QueryPreferences
 import com.tuwaiq.photogallery.R
-import com.tuwaiq.photogallery.VisibleFragment
 import com.tuwaiq.photogallery.flickr.models.GalleryItem
+import com.tuwaiq.photogallery.workers.PollWorker
+import java.util.concurrent.TimeUnit
 
 
 private const val TAG = "PhotoGalleryFragment"
 private const val POLL_WORK = "POLL_WORK"
-class PhotoGalleryFragment : VisibleFragment() {
+class PhotoGalleryFragment : Fragment() {
 
     private lateinit var photoGalleryRV:RecyclerView
     private lateinit var progressBar: ProgressBar
@@ -95,6 +97,21 @@ class PhotoGalleryFragment : VisibleFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiresBatteryNotLow(true)
+            .build()
+
+        val workRequest = PeriodicWorkRequest
+            .Builder(PollWorker::class.java,
+            5,
+            TimeUnit.MINUTES)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(requireContext())
+            .enqueueUniquePeriodicWork(POLL_WORK, ExistingPeriodicWorkPolicy.KEEP, workRequest)
+
         setHasOptionsMenu(true)
         viewModel.responseLiveData.observe(
             this, {galleryItems->
@@ -102,11 +119,8 @@ class PhotoGalleryFragment : VisibleFragment() {
                 progressBar.visibility = View.GONE
             }
         )
-
-
-
-
     }
+
     private fun updateUI(galleryItems: List<GalleryItem>){
         photoGalleryRV.adapter = GalleryAdapter(galleryItems)
     }
