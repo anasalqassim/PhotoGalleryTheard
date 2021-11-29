@@ -10,10 +10,7 @@ import com.tuwaiq.photogallery.flickr.models.GalleryItem
 import com.tuwaiq.photogallery.flickr.models.PhotoResponse
 import com.tuwaiq.photogallery.photoGallleryFragment.PhotoGalleryViewModel
 import okhttp3.OkHttpClient
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
+import retrofit2.*
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Query
 
@@ -36,12 +33,29 @@ class FlickrFetcherRepo {
 
     fun fetchPhotosRequest():Call<FlickrResponse> = flickrApi.fetchPhotos()
 
-    fun fetchPhotos():LiveData<List<GalleryItem>> = fetchPhotosMetadata(fetchPhotosRequest())
+  suspend  fun fetchPhotos():List<GalleryItem>{
+
+     // var galleryItems:List<GalleryItem> = flickrApi.fetchPhotos().await().photos.galleryItems
+
+      var galleryItems:List<GalleryItem> = emptyList()
+      val response = flickrApi.fetchPhotos().awaitResponse()
+      if (response.isSuccessful){
+          galleryItems = response.body()!!.photos.galleryItems
+      }else{
+          Log.e(TAG,  "something gone wrong ${response.errorBody()}", )
+      }
+
+
+
+
+      return galleryItems
+  }
 
 
     fun searchPhotosRequest(query: String):Call<FlickrResponse> = flickrApi.searchPhotos(query)
 
-    fun searchPhotos(query: String):LiveData<List<GalleryItem>> {
+     fun searchPhotos(query: String):LiveData<List<GalleryItem>> {
+
         return fetchPhotosMetadata(flickrApi.searchPhotos(query))
     }
 
@@ -53,29 +67,30 @@ class FlickrFetcherRepo {
 
       //  val photoRequest:  = flickrApi.fetchPhotos()
 
-        photoRequest.enqueue(object : Callback<FlickrResponse>{
-            override fun onResponse(
-                call: Call<FlickrResponse>,
-                response: Response<FlickrResponse>
-            ) {
-                val flickrResponse:FlickrResponse? = response.body()
+//        photoRequest.enqueue(object : Callback<FlickrResponse>{
+//            override fun onResponse(
+//                call: Call<FlickrResponse>,
+//                response: Response<FlickrResponse>
+//            ) {
+//                val flickrResponse:FlickrResponse? = response.body()
+//
+//                val photoResponse:PhotoResponse? = flickrResponse?.photos
+//
+//                var galleryItems:List<GalleryItem> = photoResponse?.galleryItems ?:
+//                emptyList()
+//
+//                galleryItems = galleryItems.filterNot { it.url.isBlank() }
+//
+//                responseLiveData.value = galleryItems
+//            }
+//
+//            override fun onFailure(call: Call<FlickrResponse>, t: Throwable) {
+//               Log.e(TAG , "omg" , t)
+//            }
+//
+//
+//        })
 
-                val photoResponse:PhotoResponse? = flickrResponse?.photos
-
-                var galleryItems:List<GalleryItem> = photoResponse?.galleryItems ?:
-                emptyList()
-
-                galleryItems = galleryItems.filterNot { it.url.isBlank() }
-
-                responseLiveData.value = galleryItems
-            }
-
-            override fun onFailure(call: Call<FlickrResponse>, t: Throwable) {
-               Log.e(TAG , "omg" , t)
-            }
-
-
-        })
 
 
         return responseLiveData

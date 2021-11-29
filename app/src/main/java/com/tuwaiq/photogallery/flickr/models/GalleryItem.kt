@@ -6,5 +6,7 @@ data class GalleryItem(
     val id:String = "",
     val title:String = "",
     @SerializedName("url_s")
-    val url:String = ""
+    val url:String = "",
+    @SerializedName("owner")
+    val user_id:String = ""
 )

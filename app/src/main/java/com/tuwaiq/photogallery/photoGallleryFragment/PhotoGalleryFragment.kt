@@ -9,32 +9,40 @@ import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
 import android.util.Log
 import android.view.*
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.SearchView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.work.*
 import coil.load
+import com.airbnb.lottie.LottieAnimationView
+import com.tuwaiq.photogallery.PhotoPageActivity
 import com.tuwaiq.photogallery.QueryPreferences
 import com.tuwaiq.photogallery.R
 import com.tuwaiq.photogallery.flickr.models.GalleryItem
 import com.tuwaiq.photogallery.workers.PollWorker
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 
 private const val TAG = "PhotoGalleryFragment"
 private const val POLL_WORK = "POLL_WORK"
+const val PHOTO_LINK_KEY = "full photo"
 class PhotoGalleryFragment : Fragment() {
 
     private lateinit var photoGalleryRV:RecyclerView
-    private lateinit var progressBar: ProgressBar
+    private lateinit var progressBar: LottieAnimationView
+
+
 
     private val viewModel by lazy { ViewModelProvider(this)[PhotoGalleryViewModel::class.java] }
 
 
-    val onShowNotification = object : BroadcastReceiver(){
+    private val onShowNotification = object : BroadcastReceiver(){
         override fun onReceive(context: Context?, intent: Intent?) {
             Log.d(TAG , "hi im awake")
             resultCode = Activity.RESULT_CANCELED
@@ -96,6 +104,8 @@ class PhotoGalleryFragment : Fragment() {
                         viewModel.sendQueryFetchPhotos(query)
                         progressBar.visibility = View.VISIBLE
                     }
+                    val imm:InputMethodManager = context?.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+                    imm.hideSoftInputFromWindow(searchView.windowToken,0)
                     return true
                 }
 
@@ -139,6 +149,8 @@ class PhotoGalleryFragment : Fragment() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
+
+
         return when(item.itemId){
             R.id.clear_search -> {
                 viewModel.sendQueryFetchPhotos("")
@@ -161,7 +173,8 @@ class PhotoGalleryFragment : Fragment() {
 
 
         setHasOptionsMenu(true)
-        viewModel.responseLiveData.observe(
+        //
+        viewModel.fetchPhotos().observe(
             this, {galleryItems->
                 updateUI(galleryItems)
                 progressBar.visibility = View.GONE
@@ -185,25 +198,39 @@ class PhotoGalleryFragment : Fragment() {
         val view =  inflater.inflate(R.layout.photo_gallery_fragment, container, false)
         photoGalleryRV = view.findViewById(R.id.photoGallery_rv)
         photoGalleryRV.layoutManager = GridLayoutManager(context,3)
-        progressBar = view.findViewById(R.id.progressBar)
+        progressBar = view.findViewById(R.id.animation_view)
         return view
     }
 
     private inner class GalleryHolder( view: View):
-            RecyclerView.ViewHolder(view){
+            RecyclerView.ViewHolder(view) , View.OnClickListener{
                 private val photoItem:ImageView = itemView.findViewById(R.id.photo_item)
 
+                private lateinit var galleryItem: GalleryItem
+             init {
+                photoItem.setOnClickListener(this)
+
+             }
            fun bind(galleryItem: GalleryItem){
+                this.galleryItem = galleryItem
                 photoItem.load(galleryItem.url){
                     placeholder(R.drawable.ic_android_black_24dp)
                     crossfade(250)
-
-
                 }
            }
 
+        override fun onClick(v: View?) {
 
+            val fullPhotoLink = "https://www.flickr.com/photos/${galleryItem.user_id}/${galleryItem.id}"
+            val intent = Intent(requireContext(),PhotoPageActivity::class.java).apply {
+                putExtra(PHOTO_LINK_KEY,fullPhotoLink)
             }
+            startActivity(intent)
+
+        }
+
+
+    }
     private inner class GalleryAdapter(val galleryItems:List<GalleryItem>):
             RecyclerView.Adapter<GalleryHolder>() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GalleryHolder {
